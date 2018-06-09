@@ -1,6 +1,6 @@
 import { google, drive_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
-import * as fs from "fs";
+import fs from "fs";
 
 export class Drive {
   drive: drive_v3.Drive;
@@ -24,9 +24,9 @@ export class Drive {
     return response.data.id;
   }
 
-  async uploadFile(folderId: string, fileName: string, file: fs.ReadStream) {
+  async uploadFile(folderId: string, fileName: string, body: any) {
     await this.drive.files.create({
-      media: { body: file },
+      media: { body },
       requestBody: {
         name: fileName,
         mimeType: "image/jpeg",
