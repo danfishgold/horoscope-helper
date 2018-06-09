@@ -1,6 +1,9 @@
 import { google, drive_v3 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import fs from "fs";
+import Telebot from "telebot";
+import { downloadToFile, deleteFile } from "./junkDrawer";
+import tempfile from "tempfile";
 
 export class Drive {
   drive: drive_v3.Drive;
@@ -33,5 +36,14 @@ export class Drive {
         parents: [folderId]
       }
     });
+  }
+
+  async uploadFileFromTelegram(bot: Telebot, fileId: string, folderId: string) {
+    const url = (await bot.getFile(fileId)).fileLink;
+    const path = tempfile(".jpg");
+    console.log(`temporary file: ${path}`);
+    await downloadToFile(url, path);
+    await this.uploadFile(folderId, "hey.jpg", fs.createReadStream(path));
+    await deleteFile(path);
   }
 }

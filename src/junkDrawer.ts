@@ -1,5 +1,7 @@
 import fs from "fs";
 import readline from "readline";
+import request from "request";
+import { Stream } from "stream";
 
 export function readFile(path: string): Promise<any> {
   return new Promise(function(resolve, reject) {
@@ -28,6 +30,25 @@ export function fileExists(path: string): Promise<boolean> {
   });
 }
 
+export function deleteFile(path: string): Promise<null> {
+  return new Promise(function(resolve, reject) {
+    fs.unlink(path, function(err: Error) {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+export async function downloadToFile(url: string, file: string): Promise<any> {
+  return new Promise(function(resolve, reject) {
+    const stream = request(url).pipe(fs.createWriteStream(file));
+    stream.on("finish", function(err) {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
 export function readLine(question: string): Promise<string> {
   return new Promise(function(resolve, reject) {
     const rl = readline.createInterface({
@@ -39,4 +60,24 @@ export function readLine(question: string): Promise<string> {
       resolve(answer);
     });
   });
+}
+
+export function minBy<T>(array: T[], value: (_: T) => number): T | undefined {
+  if (!array.length) {
+    return;
+  }
+  let minValue = value(array[0]);
+  let minIndex = 0;
+  for (let i = 1; i < array.length; i++) {
+    const val = value(array[i]);
+    if (val < minValue) {
+      minValue = val;
+      minIndex = i;
+    }
+  }
+  return array[minIndex];
+}
+
+export function maxBy<T>(array: T[], value: (_: T) => number): T | undefined {
+  return minBy(array, x => -value(x));
 }
