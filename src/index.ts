@@ -1,49 +1,23 @@
-import dotenv from "dotenv";
 import { authorize } from "./authorize";
 import { google } from "googleapis";
+import { Sheet } from "./sheet";
+import dotenv from "dotenv";
+dotenv.config();
 
-authorize()
-  .then(auth => addRow(auth, 2, ["אהלן", "גבר"]))
-  .catch(err => console.log(`error: ${err}`));
 
-async function addRow(auth: any, rowIndex: number, row: string[]) {
-  const spreadsheetId = process.env.spreadsheet_id;
-  const sheetName = process.env.sheet_name;
 
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Find the sheet id
-  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-  if (!spreadsheet.data.sheets) {
-    throw "Couldn't load spreadsheet";
   }
-  const sheet = spreadsheet.data.sheets.find(
-    sheet => (sheet.properties ? sheet.properties.title == sheetName : false)
+async function hey() {
+  const auth = await authorize();
+  const sheet = await Sheet.new(
+    auth,
+    process.env.spreadsheet_id as string,
+    process.env.sheet_name as string
   );
-  if (!sheet || !sheet.properties || sheet.properties.sheetId) {
-    throw `Couldn't find the sheet named "${sheetName}"`;
-  }
-  const sheetId = sheet.properties.sheetId;
+  await sheet.addRow(2, ["Hello", "World"]);
+}
 
-  // Insert a new empty row
-  const range = {
-    sheetId,
-    dimension: "ROWS",
-    startIndex: rowIndex - 1,
-    endIndex: rowIndex
-  };
-  await sheets.spreadsheets.batchUpdate({
-    spreadsheetId,
-    requestBody: { requests: [{ insertDimension: { range } }] }
-  });
-
-  // Fill in the new row
-  await sheets.spreadsheets.values.update({
-    spreadsheetId,
-    range: `${sheetName}!A${rowIndex}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [row] }
-  });
+hey().catch(err => console.log(`error: ${err}`));
 }
 
 async function listFiles(auth: any) {
