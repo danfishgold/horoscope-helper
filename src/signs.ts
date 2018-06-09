@@ -1,3 +1,5 @@
+import Telebot from "telebot";
+
 export enum Sign {
   Tale,
   Shor,
@@ -73,8 +75,12 @@ export function fromString(text: string): Sign | undefined {
   }
 }
 
-export const allSigns = [
+const allSigns = [
   [Sign.Tale, Sign.Shor, Sign.Teomim, Sign.Sartan],
   [Sign.Arie, Sign.Betula, Sign.Moznaim, Sign.Akrav],
   [Sign.Kashat, Sign.Gdi, Sign.Dli, Sign.Dagim]
 ];
+
+export function keyboard(bot: Telebot) {
+  return bot.keyboard(allSigns);
+}
