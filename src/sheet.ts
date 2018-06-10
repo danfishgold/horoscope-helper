@@ -1,7 +1,7 @@
 import { google, sheets_v4 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 
-export class Sheet {
+export default class Sheet {
   sheets: sheets_v4.Sheets;
   spreadsheetId: string;
   sheet: sheets_v4.Schema$Sheet;

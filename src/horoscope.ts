@@ -1,5 +1,6 @@
 import * as Signs from "./signs";
 import Telebot from "telebot";
+import Drive from "./drive";
 
 export enum Field {
   Image,

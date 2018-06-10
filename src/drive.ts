@@ -5,7 +5,7 @@ import Telebot from "telebot";
 import { downloadToFile, deleteFile } from "./junkDrawer";
 import tempfile from "tempfile";
 
-export class Drive {
+export default class Drive {
   drive: drive_v3.Drive;
 
   constructor(auth: OAuth2Client) {

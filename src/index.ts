@@ -1,8 +1,8 @@
 import Telebot from "telebot";
 import { authorize } from "./authorize";
 import { google } from "googleapis";
-import { Sheet } from "./sheet";
-import { Drive } from "./drive";
+import Sheet from "./sheet";
+import Drive from "./drive";
 import { maxBy } from "./junkDrawer";
 import dotenv from "dotenv";
 dotenv.config();
