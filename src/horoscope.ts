@@ -24,30 +24,4 @@ export default class Horoscope {
     else if (!this.censor) return Field.Censor;
     else return undefined;
   }
-
-  public parseFieldText(field: Field, text: string) {
-    switch (field) {
-      case Field.Sign:
-        const parsed = Signs.fromString(text);
-        if (parsed) this.sign = parsed;
-        else throw `Couldn't parse the sign: ${text}`;
-      case Field.Content:
-        this.content = text;
-      case Field.Censor:
-        this.censor = text;
-    }
-  }
-
-  public requestField(field: Field, bot: Telebot, msg: any) {
-    switch (field) {
-      case Field.Sign:
-        return msg.reply("איזה מזל? (התחיל לרדת גשם)", {
-          replyMarkup: Signs.keyboard(bot)
-        });
-      case Field.Content:
-        return msg.reply("מה התוכן?");
-      case Field.Censor:
-        return msg.reply("מי צנזר???");
-    }
-  }
 }
