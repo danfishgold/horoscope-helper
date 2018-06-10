@@ -38,12 +38,17 @@ export default class Drive {
     });
   }
 
-  async uploadFileFromTelegram(bot: Telebot, fileId: string, folderId: string) {
-    const url = (await bot.getFile(fileId)).fileLink;
+  async uploadFileFromTelegram(
+    bot: Telebot,
+    imageId: string,
+    filename: string,
+    folderId: string
+  ) {
+    const url = (await bot.getFile(imageId)).fileLink;
     const path = tempfile(".jpg");
     console.log(`temporary file: ${path}`);
     await downloadToFile(url, path);
-    await this.uploadFile(folderId, "hey.jpg", fs.createReadStream(path));
+    await this.uploadFile(folderId, filename, fs.createReadStream(path));
     await deleteFile(path);
   }
 }
