@@ -72,4 +72,24 @@ export default class Sheet {
       requestBody: { values: [row] }
     });
   }
+
+  public async nextAvailableId(): Promise<number> {
+    const idData = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: "צינזורים!A2:A"
+    });
+    if (!idData.data.values) {
+      throw "Couldn't load the id column";
+    }
+    const idArrayOfArrays: number[][] = idData.data.values;
+    const idArray: number[] = [].concat
+      .apply([], idArrayOfArrays)
+      .map((id: string) => parseInt(id));
+    const idSet = new Set(idArray);
+    const maxId = Math.max(...idArray);
+    for (let i = 1; i < maxId; i++) {
+      if (!idSet.has(i)) return i;
+    }
+    return maxId + 1;
+  }
 }
