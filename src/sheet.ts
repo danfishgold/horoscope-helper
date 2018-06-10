@@ -38,7 +38,7 @@ export default class Sheet {
   }
 
   sheetId(): number {
-    if (!this.sheet.properties || !this.sheet.properties.sheetId) {
+    if (!this.sheet.properties || this.sheet.properties.sheetId == undefined) {
       throw "Can't find properties for sheet.";
     }
     return this.sheet.properties.sheetId;

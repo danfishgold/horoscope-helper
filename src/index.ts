@@ -40,7 +40,12 @@ bot.on("photo", msg => {
 });
 
 bot.on("text", msg => {
-  onText(msg).catch(err => console.log("error: ", err));
+  onText(msg).catch(err => {
+    msg.reply.text(
+      `משהו רע קרה. אם היינו באמצע רישום הורוסקופ כדאי שנתחיל מההתחלה. דן ירצה לקבל צילום מסך על זה (אבא שלי עוד ישמע על זה!)\n${err}`
+    );
+    conversations.delete(msg.from.id);
+  });
 });
 
 async function onText(msg: any) {
@@ -105,7 +110,7 @@ async function uploadHoroscope(
   row[1] = censor;
   row[4] = Signs.toString(sign);
   row[14] = "TRUE";
-  sheet.addRow(2, row);
+  await sheet.addRow(2, row);
 }
 
 function requestNextField(msg: any, horoscope: Horoscope) {

@@ -82,5 +82,6 @@ const allSigns = [
 ];
 
 export function keyboard(bot: Telebot) {
-  return bot.keyboard(allSigns);
+  const strings = allSigns.map(row => row.map(sign => toString(sign)));
+  return bot.keyboard(strings, { once: true });
 }
