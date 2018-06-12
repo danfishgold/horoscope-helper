@@ -9,4 +9,9 @@ import Bot from "./bot";
 import dotenv from "dotenv";
 dotenv.config();
 
-Bot.new().then(bot => bot.start());
+Bot.new(
+  process.env.telegram_token as string,
+  process.env.spreadsheet_id as string,
+  process.env.sheet_name as string,
+  process.env.horoscopes_folder_id as string
+).then(bot => bot.start());

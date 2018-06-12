@@ -5,18 +5,19 @@ import Drive from "./drive";
 import { maxBy } from "./junkDrawer";
 import * as Signs from "./signs";
 import Horoscope, { Field } from "./horoscope";
-import dotenv from "dotenv";
-dotenv.config();
 
 export default class Bot {
-  bot: Telebot = new Telebot({ token: process.env.telegram_token as string });
-  conversations = new Map<string, Horoscope>();
+  bot: Telebot;
   drive: Drive;
   sheet: Sheet;
+  folderId: string;
+  conversations = new Map<string, Horoscope>();
 
-  constructor(drive: Drive, sheet: Sheet) {
+  constructor(bot: Telebot, drive: Drive, sheet: Sheet, folderId: string) {
+    this.bot = bot;
     this.drive = drive;
     this.sheet = sheet;
+    this.folderId = folderId;
 
     this.bot.on("/start", msg => this.onStart(msg));
     this.bot.on("photo", msg => this.onPhoto(msg));
@@ -30,15 +31,17 @@ export default class Bot {
     });
   }
 
-  public static async new(): Promise<Bot> {
+  public static async new(
+    botToken: string,
+    spreadsheetId: string,
+    sheetName: string,
+    folderId: string
+  ): Promise<Bot> {
+    const bot = new Telebot({ token: botToken });
     const auth = await authorize();
     const drive = new Drive(auth);
-    const sheet = await Sheet.new(
-      auth,
-      process.env.spreadsheet_id as string,
-      process.env.sheet_name as string
-    );
-    return new Bot(drive, sheet);
+    const sheet = await Sheet.new(auth, spreadsheetId, sheetName);
+    return new Bot(bot, drive, sheet, folderId);
   }
 
   public start() {
@@ -96,7 +99,7 @@ export default class Bot {
       this.requestNextField(msg, horoscope);
     } else {
       msg.reply.text("שניה, אני מעלה את ההורוסקופ");
-      await this.uploadHoroscope(this.bot, horoscope, this.drive, this.sheet);
+      await this.uploadHoroscope(horoscope);
       this.conversations.delete(msg.from.id);
       msg.reply.text("זהו. זו הזדמנות פז להעלות הורוסקופ נוסף");
       console.log(
@@ -106,15 +109,10 @@ export default class Bot {
     }
   }
 
-  async uploadHoroscope(
-    bot: Telebot,
-    horoscope: Horoscope,
-    drive: Drive,
-    sheet: Sheet
-  ) {
-    const id = await sheet.nextAvailableId();
-    await drive.uploadFileFromTelegram(
-      bot,
+  async uploadHoroscope(horoscope: Horoscope) {
+    const id = await this.sheet.nextAvailableId();
+    await this.drive.uploadFileFromTelegram(
+      this.bot,
       horoscope.imageId,
       `${id}.jpg`,
       process.env.horoscopes_folder_id as string
@@ -130,8 +128,9 @@ export default class Bot {
     row[1] = censor;
     row[4] = Signs.toString(sign);
     row[5] = content;
+    row[11] = "=AVERAGE(G2:K2)";
     row[14] = "TRUE";
-    await sheet.addRow(2, row);
+    await this.sheet.addRow(2, row);
   }
 
   requestNextField(msg: any, horoscope: Horoscope) {
