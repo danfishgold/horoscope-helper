@@ -20,7 +20,14 @@ export default class Bot {
     this.folderId = folderId;
 
     this.bot.on("/start", msg => this.onStart(msg));
-    this.bot.on("photo", msg => this.onPhoto(msg));
+    this.bot.on("photo", msg =>
+      this.onPhoto(msg).catch(err => {
+        msg.reply.text(
+          `משהו רע קרה. אם היינו באמצע רישום הורוסקופ כדאי שנתחיל מההתחלה. דן ירצה לקבל צילום מסך של זה (אבא שלי עוד ישמע על זה!)\n${err}`
+        );
+        this.conversations.delete(msg.from.id);
+      })
+    );
     this.bot.on("text", msg => {
       this.onText(msg).catch(err => {
         msg.reply.text(
@@ -54,7 +61,7 @@ export default class Bot {
     );
   }
 
-  onPhoto(msg: any) {
+  async onPhoto(msg: any) {
     const imageId = maxBy(msg.photo, (sz: any) => sz.file_size).file_id;
     const horoscope = new Horoscope(imageId);
     this.conversations.set(msg.from.id, horoscope);
@@ -66,6 +73,9 @@ export default class Bot {
   }
 
   async onText(msg: any) {
+    if (msg.text == "/start") {
+      return;
+    }
     const horoscope = this.conversations.get(msg.from.id);
     if (horoscope == undefined) {
       msg.reply.text("מה עם איזו תמונה או משהו בסגנון?");
