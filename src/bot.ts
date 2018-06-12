@@ -23,7 +23,7 @@ export default class Bot {
     this.bot.on("text", msg => {
       this.onText(msg).catch(err => {
         msg.reply.text(
-          `משהו רע קרה. אם היינו באמצע רישום הורוסקופ כדאי שנתחיל מההתחלה. דן ירצה לקבל צילום מסך על זה (אבא שלי עוד ישמע על זה!)\n${err}`
+          `משהו רע קרה. אם היינו באמצע רישום הורוסקופ כדאי שנתחיל מההתחלה. דן ירצה לקבל צילום מסך של זה (אבא שלי עוד ישמע על זה!)\n${err}`
         );
         this.conversations.delete(msg.from.id);
       });
@@ -55,6 +55,10 @@ export default class Bot {
     const imageId = maxBy(msg.photo, (sz: any) => sz.file_size).file_id;
     const horoscope = new Horoscope(imageId);
     this.conversations.set(msg.from.id, horoscope);
+    console.log(
+      `New horoscope by ${msg.from.first_name} ${msg.from.last_name} ` +
+        `(${msg.from.id})`
+    );
     this.requestNextField(msg, horoscope);
   }
 
@@ -95,6 +99,10 @@ export default class Bot {
       await this.uploadHoroscope(this.bot, horoscope, this.drive, this.sheet);
       this.conversations.delete(msg.from.id);
       msg.reply.text("זהו. זו הזדמנות פז להעלות הורוסקופ נוסף");
+      console.log(
+        `Horoscope uploaded by ${msg.from.first_name} ${msg.from.last_name} ` +
+          `(${msg.from.id})`
+      );
     }
   }
 
