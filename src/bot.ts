@@ -71,10 +71,12 @@ export default class Bot {
         return;
       case Field.Sign:
         const parsed = Signs.fromString(msg.text);
-        if (parsed) {
+        if (parsed != undefined) {
           horoscope.sign = parsed;
         } else {
-          msg.reply.text("לא הבנתי, אפשר שוב?");
+          msg.reply.text("לא הבנתי, אפשר שוב?", {
+            replyMarkup: Signs.keyboard(this.bot)
+          });
           return;
         }
         break;
