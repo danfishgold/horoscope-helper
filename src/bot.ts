@@ -64,7 +64,7 @@ export default class Bot {
 
   async onText(msg: any) {
     const horoscope = this.conversations.get(msg.from.id);
-    if (!horoscope) {
+    if (horoscope == undefined) {
       msg.reply.text("מה עם איזו תמונה או משהו בסגנון?");
       return;
     }
@@ -121,7 +121,7 @@ export default class Bot {
     );
 
     const { censor, sign, content } = horoscope;
-    if (!censor || !sign || !content) {
+    if (censor == undefined || sign == undefined || content == undefined) {
       throw "Horoscope not ready";
     }
     const row = new Array(15);

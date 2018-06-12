@@ -21,7 +21,7 @@ export default class Drive {
       }
     });
 
-    if (!response.data.id) {
+    if (response.data.id == undefined) {
       throw `Couldn't create folder "${name}"`;
     }
     return response.data.id;

@@ -24,13 +24,13 @@ export default class Sheet {
     const sheets = google.sheets({ version: "v4", auth });
 
     const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
-    if (!spreadsheet.data.sheets) {
+    if (spreadsheet.data.sheets == undefined) {
       throw "Couldn't load spreadsheet";
     }
     const sheet = spreadsheet.data.sheets.find(
       sheet => (sheet.properties ? sheet.properties.title == sheetName : false)
     );
-    if (!sheet) {
+    if (sheet == undefined) {
       throw `Couldn't find the sheet named "${sheetName}"`;
     }
 
@@ -38,14 +38,20 @@ export default class Sheet {
   }
 
   sheetId(): number {
-    if (!this.sheet.properties || this.sheet.properties.sheetId == undefined) {
+    if (
+      this.sheet.properties == undefined ||
+      this.sheet.properties.sheetId == undefined
+    ) {
       throw "Can't find properties for sheet.";
     }
     return this.sheet.properties.sheetId;
   }
 
   sheetName(): string {
-    if (!this.sheet.properties || !this.sheet.properties.title) {
+    if (
+      this.sheet.properties == undefined ||
+      this.sheet.properties.title == undefined
+    ) {
       throw "Can't find properties for sheet.";
     }
     return this.sheet.properties.title;
@@ -78,7 +84,7 @@ export default class Sheet {
       spreadsheetId: this.spreadsheetId,
       range: "צינזורים!A2:A"
     });
-    if (!idData.data.values) {
+    if (idData.data.values == undefined) {
       throw "Couldn't load the id column";
     }
     const idArrayOfArrays: number[][] = idData.data.values;

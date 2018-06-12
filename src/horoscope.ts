@@ -19,9 +19,9 @@ export default class Horoscope {
   }
 
   public nextEmptyField(): Field | undefined {
-    if (!this.sign) return Field.Sign;
-    else if (!this.content) return Field.Content;
-    else if (!this.censor) return Field.Censor;
+    if (this.sign == undefined) return Field.Sign;
+    else if (this.content == undefined) return Field.Content;
+    else if (this.censor == undefined) return Field.Censor;
     else return undefined;
   }
 }

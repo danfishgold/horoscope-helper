@@ -63,7 +63,7 @@ export function readLine(question: string): Promise<string> {
 }
 
 export function minBy<T>(array: T[], value: (_: T) => number): T | undefined {
-  if (!array.length) {
+  if (array.length == 0) {
     return;
   }
   let minValue = value(array[0]);
