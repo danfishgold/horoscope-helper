@@ -9,7 +9,7 @@ const SCOPES = [
 ];
 const TOKEN_PATH = "credentials.json";
 
-export async function authorize(): Promise<OAuth2Client> {
+export default async function authorize(): Promise<OAuth2Client> {
   const file = await readFile("client_secret.json");
   const credentials = JSON.parse(file);
   const { client_secret, client_id, redirect_uris } = credentials.installed;
