@@ -81,3 +81,7 @@ export function minBy<T>(array: T[], value: (_: T) => number): T | undefined {
 export function maxBy<T>(array: T[], value: (_: T) => number): T | undefined {
   return minBy(array, x => -value(x));
 }
+
+export function flatten<T>(arrayOfArrays: T[][]): T[] {
+  return [].concat.apply([], arrayOfArrays);
+}

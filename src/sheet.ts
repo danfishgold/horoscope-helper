@@ -1,5 +1,6 @@
 import { google, sheets_v4 } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
+import { flatten } from "./junkDrawer";
 
 export default class Sheet {
   sheets: sheets_v4.Sheets;
@@ -79,18 +80,28 @@ export default class Sheet {
     });
   }
 
+  async readColumn(column: string): Promise<string[]> {
+    const columnData = await this.sheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: `${this.sheetName()}!${column}2:${column}`,
+      majorDimension: "COLUMNS"
+    });
+
+    if (columnData.data.values == undefined) {
+      throw `Couldn't read column ${column}`;
+    }
+    return flatten(columnData.data.values) as string[];
+  }
+
   public async nextAvailableId(): Promise<number> {
     const idData = await this.sheets.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
-      range: "צינזורים!A2:A"
+      range: `${this.sheetName()}!A2:A`
     });
     if (idData.data.values == undefined) {
       throw "Couldn't load the id column";
     }
-    const idArrayOfArrays: number[][] = idData.data.values;
-    const idArray: number[] = [].concat
-      .apply([], idArrayOfArrays)
-      .map((id: string) => parseInt(id));
+    const idArray: number[] = flatten(idData.data.values);
     const idSet = new Set(idArray);
     const maxId = Math.max(...idArray);
     for (let i = 1; i < maxId; i++) {
