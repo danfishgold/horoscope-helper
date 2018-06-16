@@ -85,3 +85,19 @@ export function maxBy<T>(array: T[], value: (_: T) => number): T | undefined {
 export function flatten<T>(arrayOfArrays: T[][]): T[] {
   return [].concat.apply([], arrayOfArrays);
 }
+
+export function zip<T, S>(a1: T[], a2: S[]): [T, S][] {
+  let res: [T, S][] = [];
+  a1.forEach((t, idx) => {
+    if (idx >= a2.length) {
+      return;
+    }
+    const s = a2[idx];
+    res.push([t, s]);
+  });
+  return res;
+}
+
+export function sum(arr: number[]): number {
+  return arr.reduce((a, b) => a + b, 0);
+}

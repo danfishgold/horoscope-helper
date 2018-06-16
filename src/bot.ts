@@ -2,9 +2,10 @@ import Telebot from "telebot";
 import authorize from "./authorize";
 import Sheet from "./sheet";
 import Drive from "./drive";
-import { maxBy } from "./junkDrawer";
+import { zip, maxBy, sum } from "./junkDrawer";
 import * as Signs from "./signs";
 import Horoscope, { Field } from "./horoscope";
+import moment from "moment";
 
 export default class Bot {
   bot: Telebot;
@@ -20,6 +21,9 @@ export default class Bot {
     this.folderId = folderId;
 
     this.bot.on("/start", msg => this.onStart(msg));
+    this.bot.on("/next", msg =>
+      this.onNext(msg).catch(err => console.log(err))
+    );
     this.bot.on("photo", msg =>
       this.onPhoto(msg).catch(err => {
         msg.reply.text(
@@ -61,6 +65,43 @@ export default class Bot {
     );
   }
 
+  async onNext(msg: any) {
+    const dateStrings = await this.sheet.readColumn("N");
+    const signStrings = await this.sheet.readColumn("E");
+    const today = moment();
+    const daysAgos = dateStrings.map(
+      date => -moment(date, "DD-MM-YYYY").diff(today, "days")
+    );
+    const signs = signStrings.map(sign => Signs.fromString(sign));
+    const appearences = new Map<Signs.Sign, number[]>();
+    for (const [sign, daysAgo] of zip(signs, daysAgos)) {
+      if (isNaN(daysAgo)) {
+        continue;
+      }
+      if (sign == undefined) {
+        throw "Couldn't parse sign";
+      }
+      if (!appearences.has(sign)) {
+        appearences.set(sign, []);
+      }
+      (appearences.get(sign) as number[]).push(daysAgo);
+    }
+    const nearest = Math.min(...daysAgos.filter(n => !isNaN(n)));
+    const offset = 1 - nearest;
+    const grades = new Map<Signs.Sign, number>();
+    for (const [sign, days] of appearences.entries()) {
+      const grade = sum(days.map(n => 1 / (offset + n)));
+      grades.set(sign, grade);
+    }
+    const smallestPairs: [Signs.Sign, number][] = Array.from(grades.entries())
+      .sort((gr1, gr2) => gr1[1] - gr2[1])
+      .slice(0, 3);
+    const message = smallestPairs
+      .map(gr => `${Signs.toString(gr[0])}: ${gr[1].toFixed(2)}`)
+      .join("\n");
+    msg.reply.text(`המזלות הבאים שכדאי להעלות:\n${message}`);
+  }
+
   async onPhoto(msg: any) {
     const imageId = maxBy(msg.photo, (sz: any) => sz.file_size).file_id;
     const horoscope = new Horoscope(imageId);
@@ -73,9 +114,10 @@ export default class Bot {
   }
 
   async onText(msg: any) {
-    if (msg.text == "/start") {
+    if (msg.text == "/start" || msg.text == "/next") {
       return;
     }
+
     const horoscope = this.conversations.get(msg.from.id);
     if (horoscope == undefined) {
       msg.reply.text("מה עם איזו תמונה או משהו בסגנון?");
