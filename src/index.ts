@@ -1,10 +1,5 @@
 import Telebot from "telebot";
-import { google } from "googleapis";
-import Sheet from "./sheet";
-import Drive from "./drive";
 import { maxBy } from "./junkDrawer";
-import * as Signs from "./signs";
-import Horoscope, { Field } from "./horoscope";
 import Bot from "./bot";
 import { Elm } from "./elmHelper";
 import dotenv from "dotenv";
