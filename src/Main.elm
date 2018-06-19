@@ -1,9 +1,11 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Platform exposing (program)
 import Dict exposing (Dict)
 import Sign exposing (Sign)
-import Message exposing (Message)
+import Message exposing (Message(..))
+import Horoscope exposing (Horoscope)
+import Upload
 import Json.Decode
 
 
@@ -13,19 +15,20 @@ type alias Model =
 
 type alias Conversation =
     { state : State
-    , fileIds : List String
+    , photoIds : List String
     }
 
 
 initialConversation : Conversation
 initialConversation =
-    { state = ImageInput
-    , fileIds = []
+    { state = Initial
+    , photoIds = []
     }
 
 
 type State
-    = ImageInput
+    = Initial
+    | ImageInput
     | ContentInput { photoId : String }
     | SignInput { photoId : String, content : String }
     | CensorInput { photoId : String, content : String, sign : Sign }
@@ -33,16 +36,9 @@ type State
     | ErrorUploadingHoroscope Horoscope String
 
 
-type alias Horoscope =
-    { imageId : String
-    , content : String
-    , sign : Sign
-    , censor : String
-    }
-
-
 type Msg
-    = NewMessage Message
+    = NewMessage Int Message
+    | DoneUploading Int (Result String ())
 
 
 main : Program Never Model Msg
@@ -61,46 +57,78 @@ init =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Message.sub NewMessage
+    Sub.batch
+        [ Message.sub NewMessage
+        , Upload.uploadResult DoneUploading
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NewMessage { chatId, content } ->
-            let
-                convo =
-                    Dict.get chatId model.conversations
-                        |> Maybe.withDefault initialConversation
+        NewMessage chatId (Text text) ->
+            mapConversation (onText text) chatId model
 
-                ( newConvo, maybeContent, cmd ) =
-                    case content of
-                        Message.Text text ->
-                            onText text convo
+        NewMessage chatId (Photo photoId) ->
+            mapConversation (onPhoto photoId) chatId model
 
-                        Message.Photo photoId ->
-                            onPhoto photoId convo
-
-                messageCommand =
-                    maybeContent
-                        |> Maybe.map (Message chatId)
-                        |> Maybe.map Message.send
-                        |> Maybe.withDefault Cmd.none
-            in
-                ( { model | conversations = Dict.insert chatId newConvo model.conversations }
-                , Cmd.batch [ cmd, messageCommand ]
-                )
+        DoneUploading chatId result ->
+            mapConversation (onUploadFinished result) chatId model
 
 
-onText : String -> Conversation -> ( Conversation, Maybe Message.Content, Cmd Msg )
-onText text conversation =
-    case conversation.state of
+mapConversation : (Int -> Conversation -> ( Conversation, Cmd Msg )) -> Int -> Model -> ( Model, Cmd Msg )
+mapConversation fn chatId model =
+    let
+        convo =
+            Dict.get chatId model.conversations
+                |> Maybe.withDefault initialConversation
+
+        ( newConvo, cmd ) =
+            fn chatId convo
+    in
+        ( { model | conversations = Dict.insert chatId newConvo model.conversations }
+        , cmd
+        )
+
+
+setState : State -> Conversation -> Conversation
+setState newState convo =
+    { convo | state = newState }
+
+
+onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onText text chatId convo =
+    case convo.state of
+        Initial ->
+            ( convo |> setState ImageInput, Message.send chatId <| Text "TODO" )
+
         _ ->
-            ( conversation, Just <| Message.Text text, Cmd.none )
+            ( convo, Message.send chatId <| Text "TODO" )
 
 
-onPhoto : String -> Conversation -> ( Conversation, Maybe Message.Content, Cmd Msg )
-onPhoto photoId conversation =
-    case conversation.state of
+onPhoto : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onPhoto photoId chatId convo =
+    case convo.state of
+        Initial ->
+            ( { convo | photoIds = photoId :: convo.photoIds }
+                |> setState ImageInput
+            , Cmd.none
+            )
+
+        ImageInput ->
+            ( { convo | photoIds = photoId :: convo.photoIds }, Cmd.none )
+
         _ ->
-            ( conversation, Just <| Message.Photo photoId, Cmd.none )
+            ( { convo | photoIds = photoId :: convo.photoIds }
+            , Message.send chatId <| Text "נטפל בתמונה הזאת אחר כך. אנחנו באמצע משהו"
+            )
+
+
+onUploadFinished : Result String () -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onUploadFinished result chatId convo =
+    case result of
+        Ok () ->
+            ( convo, Message.send chatId <| Text "זהו. מה עכשיו?" )
+
+        Err error ->
+            ( convo, Message.send chatId <| Text <| "אוי לא. משהו רע קרה:\n" ++ error )

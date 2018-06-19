@@ -1,54 +1,36 @@
-port module Message exposing (Message, Content(..), sub, send)
-
-import Json.Decode
+port module Message exposing (Message(..), sub, send)
 
 
-type Content
+type Message
     = Text String
     | Photo String
 
 
-type alias Message =
-    { chatId : Int
-    , content : Content
-    }
-
-
-sub : (Message -> msg) -> Sub msg
+sub : (Int -> Message -> msg) -> Sub msg
 sub onMessage =
     Sub.batch
-        [ onText (fromText >> onMessage)
-        , onPhoto (fromPhoto >> onMessage)
+        [ onText (\( chatId, text ) -> onMessage chatId (Text text))
+        , onText (\( chatId, photoId ) -> onMessage chatId (Photo photoId))
         ]
 
 
-send : Message -> Cmd msg
-send { chatId, content } =
+send : Int -> Message -> Cmd msg
+send chatId content =
     case content of
         Text string ->
-            sendText ( string, chatId )
+            sendText ( chatId, string )
 
         Photo photoId ->
-            sendPhoto ( photoId, chatId )
+            sendPhoto ( chatId, photoId )
 
 
-fromText : ( String, Int ) -> Message
-fromText ( text, chatId ) =
-    Message chatId (Text text)
+port onText : (( Int, String ) -> msg) -> Sub msg
 
 
-fromPhoto : ( String, Int ) -> Message
-fromPhoto ( photoId, chatId ) =
-    Message chatId (Photo photoId)
+port onPhoto : (( Int, String ) -> msg) -> Sub msg
 
 
-port onText : (( String, Int ) -> msg) -> Sub msg
+port sendText : ( Int, String ) -> Cmd msg
 
 
-port onPhoto : (( String, Int ) -> msg) -> Sub msg
-
-
-port sendText : ( String, Int ) -> Cmd msg
-
-
-port sendPhoto : ( String, Int ) -> Cmd msg
+port sendPhoto : ( Int, String ) -> Cmd msg

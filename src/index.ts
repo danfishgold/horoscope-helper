@@ -1,12 +1,48 @@
-// import Bot from "./bot";
 import Telebot from "telebot";
+import authorize from "./authorize";
+import Sheet from "./sheet";
+import Drive from "./drive";
+import Horoscope from "./horoscope";
 import { maxBy } from "./junkDrawer";
 import { Elm } from "./elmHelper";
 import dotenv from "dotenv";
 dotenv.config();
 
+const telegramToken = process.env.telegram_test_token as string;
+const spreadsheetId = process.env.spreadsheet_id as string;
+const sheetName = process.env.sheet_name as string;
+const folderId = process.env.horoscopes_folder_id as string;
+
 const elm = Elm.Main.worker();
-const bot = new Telebot({ token: process.env.telegram_test_token as string });
+const bot = new Telebot({ token: telegramToken });
+let drive: Drive;
+let sheet: Sheet;
+
+async function setup() {
+  const auth = await authorize();
+  drive = new Drive(auth);
+  sheet = await Sheet.new(auth, spreadsheetId, sheetName);
+}
+
+async function uploadHoroscope(
+  photoId: string,
+  content: string,
+  sign: string,
+  censor: string
+) {
+  const id = await sheet.nextAvailableId();
+  await drive.uploadFileFromTelegram(bot, photoId, `${id}.jpg`, folderId);
+
+  const row = new Array(15);
+  row.fill("");
+  row[0] = id.toString();
+  row[1] = censor;
+  row[4] = sign;
+  row[5] = content;
+  row[11] = "=AVERAGE(G2:K2)";
+  row[14] = "TRUE";
+  await sheet.addRow(2, row);
+}
 
 bot.on("text", msg => elm.ports.onText.send([msg.text, msg.from.id]));
 
@@ -15,25 +51,28 @@ bot.on("photo", msg => {
   elm.ports.onPhoto.send([imageId, msg.from.id]);
 });
 
-elm.ports.sendText.subscribe(([text, chatId]: [string, number]) => {
+elm.ports.sendText.subscribe(([chatId, text]: [number, string]) => {
   bot.sendMessage(chatId, text);
 });
 
-elm.ports.sendPhoto.subscribe(([photoId, chatId]: [string, number]) => {
+elm.ports.sendPhoto.subscribe(([chatId, photoId]: [number, string]) => {
   bot.sendPhoto(chatId, photoId);
 });
 
-bot.start();
+elm.ports.uploadHoroscope.subscribe(
+  ([chatId, photoId, content, sign, censor]: [
+    number,
+    string,
+    string,
+    string,
+    string
+  ]) => {
+    uploadHoroscope(photoId, content, sign, censor)
+      .then(() => elm.ports.doneUploading.send(chatId))
+      .catch(err => elm.ports.errorUploading.send([chatId, err]));
+  }
+);
 
-// elm.ports.outPort.subscribe((msg: string) => {
-//   console.log("from elm: ", msg);
-// });
-
-// elm.ports.inPort.send("hello");
-
-// Bot.new(
-//   process.env.telegram_token as string,
-//   process.env.spreadsheet_id as string,
-//   process.env.sheet_name as string,
-//   process.env.horoscopes_folder_id as string
-// ).then(bot => bot.start());
+setup()
+  .then(() => bot.start())
+  .catch(err => console.error(err));
