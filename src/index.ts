@@ -1,4 +1,5 @@
 import Telebot from "telebot";
+import moment from "moment";
 import authorize from "./authorize";
 import Sheet from "./sheet";
 import Drive from "./drive";
@@ -91,3 +92,20 @@ elm.ports.uploadHoroscope.subscribe(
 setup()
   .then(() => bot.start())
   .catch(err => console.error(err));
+
+elm.ports.getSignsAndDates.subscribe((chatId: number) => {
+  (async () => {
+    const dateStrings = await sheet.readColumn("N");
+    const signs = await sheet.readColumn("E");
+    const today = moment();
+    const daysAgos = dateStrings.map(date => {
+      const days = -moment(date, "DD-MM-YYYY").diff(today, "days");
+      if (isNaN(days)) return null;
+      else return days;
+    });
+    return [signs, daysAgos];
+  })().then(([signs, daysAgos]) => {
+    console.log();
+    elm.ports.signsAndDates.send([chatId, signs, daysAgos]);
+  });
+});

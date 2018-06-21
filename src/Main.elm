@@ -39,6 +39,7 @@ type State
 type Msg
     = NewMessage Int Message
     | DoneUploading Int (Result String ())
+    | OnRatings Int (List ( Sign, Float ))
 
 
 main : Program Never Model Msg
@@ -60,6 +61,7 @@ subscriptions model =
     Sub.batch
         [ Message.sub NewMessage
         , Upload.uploadResult DoneUploading
+        , Sign.onRatings OnRatings
         ]
 
 
@@ -74,6 +76,9 @@ update msg model =
 
         DoneUploading chatId result ->
             mapConversation (onUploadFinished result) chatId model
+
+        OnRatings chatId ratings ->
+            mapConversation (onRatings ratings) chatId model
 
 
 mapConversation : (Int -> Conversation -> ( Conversation, Cmd Msg )) -> Int -> Model -> ( Model, Cmd Msg )
@@ -106,6 +111,16 @@ addPhotoToQueue photoId convo =
 
 onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
 onText text chatId convo =
+    case text of
+        "/next" ->
+            ( convo, Sign.getRatings chatId )
+
+        _ ->
+            onNormalText text chatId convo
+
+
+onNormalText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onNormalText text chatId convo =
     case convo.state of
         Initial ->
             ( convo |> setState ImageInput, Message.text chatId "היוש. תשלח/י לי תמונות כאוות נפשך. כשימאס לך תשלח/י לי ״זהו״ ואז נטפל בהן יפה יפה אחת אחת" )
@@ -210,3 +225,24 @@ onUploadFinished result chatId convo =
                 , Text "כלומר זה הזמן להעלות תמונות"
                 ]
             )
+
+
+onRatings : List ( Sign, Float ) -> Int -> Conversation -> ( Conversation, Cmd msg )
+onRatings ratings chatId convo =
+    let
+        topThree =
+            ratings
+                |> List.sortBy Tuple.second
+                |> List.take 3
+                |> List.map (\( sign, rating ) -> Sign.toString sign ++ ": " ++ toString (round 3 rating))
+                |> String.join "\n"
+
+        text =
+            "המזלות הבאים שכדאי להעלות:\n" ++ topThree
+    in
+        ( convo, Message.text chatId text )
+
+
+round : Int -> Float -> Float
+round digits number =
+    (toFloat <| Basics.round <| number * (10 ^ toFloat digits)) * (10 ^ toFloat -digits)
