@@ -34,7 +34,6 @@ type State
     | SignInput { photoId : String, content : String }
     | CensorInput { photoId : String, content : String, sign : Sign }
     | UploadingHoroscope Horoscope
-    | ErrorUploadingHoroscope Horoscope String
 
 
 type Msg
@@ -106,10 +105,53 @@ onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
 onText text chatId convo =
     case convo.state of
         Initial ->
-            ( convo |> setState ImageInput, Message.send chatId <| Text "TODO" )
+            ( convo |> setState ImageInput, Message.text chatId "היוש. תשלח/י לי תמונות כאוות נפשך. כשימאס לך תשלח/י לי ״זהו״ ואז נטפל בהן יפה יפה אחת אחת" )
 
-        _ ->
-            ( convo, Message.send chatId <| Text "TODO" )
+        ImageInput ->
+            if text == "זהו" then
+                case convo.photoIds of
+                    [] ->
+                        ( convo, Message.text chatId "מה זהו? לא שלחת לי תמונות" )
+
+                    nextPhoto :: otherPhotos ->
+                        ( { convo | photoIds = otherPhotos }
+                            |> setState (ContentInput { photoId = nextPhoto })
+                        , Message.batch (0.1 * second)
+                            chatId
+                            [ Text "נתחיל מזה:"
+                            , Photo nextPhoto
+                            , Text "מה כתוב?"
+                            ]
+                        )
+            else
+                ( convo, Message.text chatId "כשימאס לך להזין תמונות תכתוב ״זהו״ ואז אני אדע להתחיל לתחקר אותך על התוכן של כל תמונה" )
+
+        ContentInput { photoId } ->
+            ( convo |> setState (SignInput { photoId = photoId, content = text })
+            , Message.text chatId "מה המזל?"
+            )
+
+        SignInput { photoId, content } ->
+            case Sign.fromString text of
+                Nothing ->
+                    ( convo, Message.text chatId "לא הבנתי איזה מזל זה" )
+
+                Just sign ->
+                    ( convo |> setState (CensorInput { photoId = photoId, content = content, sign = sign })
+                    , Message.text chatId "מי צנזר?"
+                    )
+
+        CensorInput { photoId, content, sign } ->
+            let
+                horoscope =
+                    { photoId = photoId, content = content, sign = sign, censor = text }
+            in
+                ( convo |> setState (UploadingHoroscope horoscope)
+                , Message.text chatId "נייס. אני אעלה את הצנזור"
+                )
+
+        UploadingHoroscope _ ->
+            ( convo, Message.text chatId "רגע, אני עוד מעלה" )
 
 
 onPhoto : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
@@ -127,7 +169,7 @@ onPhoto photoId chatId convo =
 
         _ ->
             ( convo |> addPhotoToQueue photoId
-            , Message.send chatId <| Text "נטפל בתמונה הזאת אחר כך. אנחנו באמצע משהו"
+            , Message.text chatId "נטפל בתמונה הזאת אחר כך. אנחנו באמצע משהו"
             )
 
 
@@ -138,7 +180,7 @@ onUploadFinished result chatId convo =
             case convo.photoIds of
                 [] ->
                     ( convo |> setState ImageInput
-                    , Message.send chatId <| Text "זהו. רוצה להעלות עוד תמונות?"
+                    , Message.text chatId "זהו. רוצה להעלות עוד תמונות?"
                     )
 
                 nextPhoto :: otherPhotos ->
@@ -146,7 +188,7 @@ onUploadFinished result chatId convo =
                         |> setState (ContentInput { photoId = nextPhoto })
                     , Message.batch (0.1 * second)
                         chatId
-                        [ Text "מה עם הצנזור הזה:"
+                        [ Text "מה כתוב בצנזור הזה?"
                         , Photo nextPhoto
                         ]
                     )

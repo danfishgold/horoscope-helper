@@ -1,4 +1,4 @@
-port module Message exposing (Message(..), sub, send, batch)
+port module Message exposing (Message(..), sub, send, text, batch)
 
 import Time exposing (Time)
 
@@ -19,6 +19,11 @@ sub onMessage =
 send : Int -> Message -> Cmd msg
 send =
     delayed 0
+
+
+text : Int -> String -> Cmd msg
+text chatId text =
+    send chatId (Text text)
 
 
 delayed : Time -> Int -> Message -> Cmd msg
