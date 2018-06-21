@@ -150,7 +150,10 @@ onText text chatId convo =
                     { photoId = photoId, content = content, sign = sign, censor = text }
             in
                 ( convo |> setState (UploadingHoroscope horoscope)
-                , Message.text chatId "נייס. אני אעלה את הצנזור"
+                , Cmd.batch
+                    [ Message.text chatId "נייס. אני אעלה את הצנזור"
+                    , Upload.upload chatId horoscope
+                    ]
                 )
 
         UploadingHoroscope _ ->
