@@ -194,8 +194,9 @@ onUploadFinished result chatId convo =
                         |> setState (ContentInput { photoId = nextPhoto })
                     , Message.batch (0.1 * second)
                         chatId
-                        [ Text "מה כתוב בצנזור הזה?"
+                        [ Text "בוצע."
                         , Photo nextPhoto
+                        , Text "מה כתוב בצנזור הזה?"
                         ]
                     )
 
