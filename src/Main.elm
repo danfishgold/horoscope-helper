@@ -6,6 +6,7 @@ import Sign exposing (Sign)
 import Message exposing (Message(..))
 import Horoscope exposing (Horoscope)
 import Upload
+import Time exposing (second)
 import Json.Decode
 
 
@@ -96,6 +97,11 @@ setState newState convo =
     { convo | state = newState }
 
 
+addPhotoToQueue : String -> Conversation -> Conversation
+addPhotoToQueue photoId convo =
+    { convo | photoIds = convo.photoIds ++ [ photoId ] }
+
+
 onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
 onText text chatId convo =
     case convo.state of
@@ -110,16 +116,17 @@ onPhoto : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
 onPhoto photoId chatId convo =
     case convo.state of
         Initial ->
-            ( { convo | photoIds = photoId :: convo.photoIds }
+            ( convo
+                |> addPhotoToQueue photoId
                 |> setState ImageInput
             , Cmd.none
             )
 
         ImageInput ->
-            ( { convo | photoIds = photoId :: convo.photoIds }, Cmd.none )
+            ( convo |> addPhotoToQueue photoId, Cmd.none )
 
         _ ->
-            ( { convo | photoIds = photoId :: convo.photoIds }
+            ( convo |> addPhotoToQueue photoId
             , Message.send chatId <| Text "נטפל בתמונה הזאת אחר כך. אנחנו באמצע משהו"
             )
 
@@ -128,7 +135,29 @@ onUploadFinished : Result String () -> Int -> Conversation -> ( Conversation, Cm
 onUploadFinished result chatId convo =
     case result of
         Ok () ->
-            ( convo, Message.send chatId <| Text "זהו. מה עכשיו?" )
+            case convo.photoIds of
+                [] ->
+                    ( convo |> setState ImageInput
+                    , Message.send chatId <| Text "זהו. רוצה להעלות עוד תמונות?"
+                    )
+
+                nextPhoto :: otherPhotos ->
+                    ( { convo | photoIds = otherPhotos }
+                        |> setState (ContentInput { photoId = nextPhoto })
+                    , Message.batch (0.1 * second)
+                        chatId
+                        [ Text "מה עם הצנזור הזה:"
+                        , Photo nextPhoto
+                        ]
+                    )
 
         Err error ->
-            ( convo, Message.send chatId <| Text <| "אוי לא. משהו רע קרה:\n" ++ error )
+            ( { convo | photoIds = [] } |> setState ImageInput
+            , Message.batch (0.2 * second)
+                chatId
+                [ Text "אוי לא. משהו רע קרה"
+                , Text error
+                , Text "דן ישמח לצילום מסך. בינתיים אני אשכח את כל מה שקרה ושתכננו לעשות ונתחיל מההתחלה."
+                , Text "כלומר זה הזמן להעלות תמונות"
+                ]
+            )
