@@ -65,7 +65,7 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "msg" msg of
         NewMessage chatId (Text text) ->
             mapConversation (onText text) chatId model
 
@@ -85,6 +85,9 @@ mapConversation fn chatId model =
 
         ( newConvo, cmd ) =
             fn chatId convo
+
+        _ =
+            Debug.log "(old state, new state)" ( convo.state, newConvo.state )
     in
         ( { model | conversations = Dict.insert chatId newConvo model.conversations }
         , cmd

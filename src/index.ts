@@ -44,9 +44,13 @@ async function uploadHoroscope(
   await sheet.addRow(2, row);
 }
 
-bot.on("text", msg => elm.ports.onText.send([msg.from.id, msg.text]));
+bot.on("text", msg => {
+  console.log("received text");
+  elm.ports.onText.send([msg.from.id, msg.text]);
+});
 
 bot.on("photo", msg => {
+  console.log("received photo");
   const imageId = maxBy(msg.photo, (sz: any) => sz.file_size).file_id;
   elm.ports.onPhoto.send([msg.from.id, imageId]);
 });
