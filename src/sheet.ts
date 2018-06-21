@@ -94,14 +94,7 @@ export default class Sheet {
   }
 
   public async nextAvailableId(): Promise<number> {
-    const idData = await this.sheets.spreadsheets.values.get({
-      spreadsheetId: this.spreadsheetId,
-      range: `${this.sheetName()}!A2:A`
-    });
-    if (idData.data.values == undefined) {
-      throw "Couldn't load the id column";
-    }
-    const idArray: number[] = flatten(idData.data.values);
+    const idArray = (await this.readColumn("A")).map(id => parseInt(id));
     const idSet = new Set(idArray);
     const maxId = Math.max(...idArray);
     for (let i = 1; i < maxId; i++) {
