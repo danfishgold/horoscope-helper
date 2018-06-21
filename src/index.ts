@@ -2,7 +2,6 @@ import Telebot from "telebot";
 import authorize from "./authorize";
 import Sheet from "./sheet";
 import Drive from "./drive";
-import Horoscope from "./horoscope";
 import { maxBy } from "./junkDrawer";
 import { Elm } from "./elmHelper";
 import dotenv from "dotenv";
