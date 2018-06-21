@@ -12,7 +12,7 @@ sub : (Int -> Message -> msg) -> Sub msg
 sub onMessage =
     Sub.batch
         [ onText (\( chatId, text ) -> onMessage chatId (Text text))
-        , onText (\( chatId, photoId ) -> onMessage chatId (Photo photoId))
+        , onPhoto (\( chatId, photoId ) -> onMessage chatId (Photo photoId))
         ]
 
 
