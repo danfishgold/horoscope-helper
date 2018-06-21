@@ -44,20 +44,32 @@ async function uploadHoroscope(
   await sheet.addRow(2, row);
 }
 
-bot.on("text", msg => elm.ports.onText.send([msg.text, msg.from.id]));
+bot.on("text", msg => elm.ports.onText.send([msg.from.id, msg.text]));
 
 bot.on("photo", msg => {
   const imageId = maxBy(msg.photo, (sz: any) => sz.file_size).file_id;
-  elm.ports.onPhoto.send([imageId, msg.from.id]);
+  elm.ports.onPhoto.send([msg.from.id, imageId]);
 });
 
-elm.ports.sendText.subscribe(([chatId, text]: [number, string]) => {
-  bot.sendMessage(chatId, text);
-});
+elm.ports.sendText.subscribe(
+  ([delay, chatId, text]: [number, number, string]) => {
+    if (delay == 0) {
+      bot.sendMessage(chatId, text);
+    } else {
+      setTimeout(() => bot.sendMessage(chatId, text), delay);
+    }
+  }
+);
 
-elm.ports.sendPhoto.subscribe(([chatId, photoId]: [number, string]) => {
-  bot.sendPhoto(chatId, photoId);
-});
+elm.ports.sendPhoto.subscribe(
+  ([delay, chatId, photoId]: [number, number, string]) => {
+    if (delay == 0) {
+      bot.sendPhoto(chatId, photoId);
+    } else {
+      setTimeout(() => bot.sendPhoto(chatId, photoId), delay);
+    }
+  }
+);
 
 elm.ports.uploadHoroscope.subscribe(
   ([chatId, photoId, content, sign, censor]: [

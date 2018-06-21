@@ -1,4 +1,6 @@
-port module Message exposing (Message(..), sub, send)
+port module Message exposing (Message(..), sub, send, batch)
+
+import Time exposing (Time)
 
 
 type Message
@@ -15,13 +17,33 @@ sub onMessage =
 
 
 send : Int -> Message -> Cmd msg
-send chatId content =
+send =
+    delayed 0
+
+
+delayed : Time -> Int -> Message -> Cmd msg
+delayed delay chatId content =
     case content of
         Text string ->
-            sendText ( chatId, string )
+            sendText ( delay, chatId, string )
 
         Photo photoId ->
-            sendPhoto ( chatId, photoId )
+            sendPhoto ( delay, chatId, photoId )
+
+
+batch : Time -> Int -> List Message -> Cmd msg
+batch delay chatId messages =
+    Cmd.batch <| batchHelper delay chatId messages 0 []
+
+
+batchHelper : Time -> Int -> List Message -> Time -> List (Cmd msg) -> List (Cmd msg)
+batchHelper delay chatId messages currentDelay previousMessages =
+    case messages of
+        [] ->
+            previousMessages
+
+        current :: rest ->
+            batchHelper delay chatId rest (currentDelay + delay) (delayed currentDelay chatId current :: previousMessages)
 
 
 port onText : (( Int, String ) -> msg) -> Sub msg
@@ -30,7 +52,7 @@ port onText : (( Int, String ) -> msg) -> Sub msg
 port onPhoto : (( Int, String ) -> msg) -> Sub msg
 
 
-port sendText : ( Int, String ) -> Cmd msg
+port sendText : ( Float, Int, String ) -> Cmd msg
 
 
-port sendPhoto : ( Int, String ) -> Cmd msg
+port sendPhoto : ( Float, Int, String ) -> Cmd msg
