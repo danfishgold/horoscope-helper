@@ -7,3 +7,6 @@ client_secret.json
 credentials.json
 
 bin
+
+elm-stuff
+src/elm.js
