@@ -131,6 +131,12 @@ onNormalText text chatId convo =
                     [] ->
                         ( convo, Message.text chatId "מה זהו? לא שלחת לי תמונות" )
 
+                    [ aSinglePhoto ] ->
+                        ( { convo | photoIds = [] }
+                            |> setState (ContentInput { photoId = aSinglePhoto })
+                        , Message.text chatId "מה כתוב?"
+                        )
+
                     nextPhoto :: otherPhotos ->
                         ( { convo | photoIds = otherPhotos }
                             |> setState (ContentInput { photoId = nextPhoto })
