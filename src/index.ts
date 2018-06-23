@@ -65,6 +65,17 @@ elm.ports.sendText.subscribe(
   }
 );
 
+elm.ports.sendTextWithKeyboard.subscribe(
+  ([delay, chatId, text, keyboard]: [number, number, string, string[][]]) => {
+    const replyMarkup = { keyboard: bot.keyboard(keyboard, { once: true }) };
+    if (delay == 0) {
+      bot.sendMessage(chatId, text, { replyMarkup });
+    } else {
+      setTimeout(() => bot.sendMessage(chatId, text, { replyMarkup }), delay);
+    }
+  }
+);
+
 elm.ports.sendPhoto.subscribe(
   ([delay, chatId, photoId]: [number, number, string]) => {
     if (delay == 0) {

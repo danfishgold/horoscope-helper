@@ -5,6 +5,7 @@ import Time exposing (Time)
 
 type Message
     = Text String
+    | TextWithKeyboard String (List (List String))
     | Photo String
 
 
@@ -32,6 +33,9 @@ delayed delay chatId content =
         Text string ->
             sendText ( delay, chatId, string )
 
+        TextWithKeyboard string keyboard ->
+            sendTextWithKeyboard ( delay, chatId, string, keyboard )
+
         Photo photoId ->
             sendPhoto ( delay, chatId, photoId )
 
@@ -58,6 +62,9 @@ port onPhoto : (( Int, String ) -> msg) -> Sub msg
 
 
 port sendText : ( Float, Int, String ) -> Cmd msg
+
+
+port sendTextWithKeyboard : ( Float, Int, String, List (List String) ) -> Cmd msg
 
 
 port sendPhoto : ( Float, Int, String ) -> Cmd msg

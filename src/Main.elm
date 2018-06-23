@@ -34,6 +34,7 @@ type State
     | SignInput { photoId : String, content : String }
     | CensorInput { photoId : String, content : String, sign : Sign }
     | UploadingHoroscope Horoscope
+    | WaitingForTable
 
 
 type Msg
@@ -72,6 +73,9 @@ update msg model =
             ( model, Sign.getRatings chatId )
 
         NewMessage chatId (Text text) ->
+            mapConversation (onText text) chatId model
+
+        NewMessage chatId (TextWithKeyboard text _) ->
             mapConversation (onText text) chatId model
 
         NewMessage chatId (Photo photoId) ->
@@ -142,13 +146,16 @@ onText text chatId convo =
 
         ContentInput { photoId } ->
             ( convo |> setState (SignInput { photoId = photoId, content = text })
-            , Message.text chatId "מה המזל?"
+            , Message.send chatId <| TextWithKeyboard "מה המזל?" Sign.keyboard
             )
 
         SignInput { photoId, content } ->
             case Sign.fromString text of
                 Nothing ->
-                    ( convo, Message.text chatId "לא הבנתי איזה מזל זה" )
+                    ( convo
+                    , Message.send chatId <|
+                        TextWithKeyboard "לא הבנתי איזה מזל זה" Sign.keyboard
+                    )
 
                 Just sign ->
                     ( convo |> setState (CensorInput { photoId = photoId, content = content, sign = sign })
@@ -169,6 +176,9 @@ onText text chatId convo =
 
         UploadingHoroscope _ ->
             ( convo, Message.text chatId "רגע, אני עוד מעלה" )
+
+        WaitingForTable ->
+            ( convo, Message.text chatId "שניונת" )
 
 
 onPhoto : String -> Int -> Conversation -> ( Conversation, Cmd Msg )

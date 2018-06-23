@@ -1,4 +1,4 @@
-port module Sign exposing (Sign(..), toString, fromString, getRatings, onRatings)
+port module Sign exposing (Sign(..), toString, fromString, getRatings, onRatings, keyboard)
 
 import Dict
 
@@ -16,6 +16,27 @@ type Sign
     | Gdi
     | Dli
     | Dagim
+
+
+keyboard : List (List String)
+keyboard =
+    [ [ Tale
+      , Shor
+      , Teomim
+      , Sartan
+      ]
+    , [ Arie
+      , Betula
+      , Moznaim
+      , Akrav
+      ]
+    , [ Kashat
+      , Gdi
+      , Dli
+      , Dagim
+      ]
+    ]
+        |> List.map (List.map toString)
 
 
 toString : Sign -> String
