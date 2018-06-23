@@ -68,6 +68,9 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        NewMessage chatId (Text "/next") ->
+            ( model, Sign.getRatings chatId )
+
         NewMessage chatId (Text text) ->
             mapConversation (onText text) chatId model
 
@@ -108,16 +111,6 @@ addPhotoToQueue photoId convo =
 
 onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
 onText text chatId convo =
-    case text of
-        "/next" ->
-            ( convo, Sign.getRatings chatId )
-
-        _ ->
-            onNormalText text chatId convo
-
-
-onNormalText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
-onNormalText text chatId convo =
     case convo.state of
         Initial ->
             ( convo |> setState ImageInput, Message.text chatId "היוש. תשלח/י לי תמונות כאוות נפשך. כשימאס לך תשלח/י לי ״זהו״ ואז נטפל בהן יפה יפה אחת אחת" )
