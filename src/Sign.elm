@@ -1,6 +1,8 @@
 port module Sign exposing (Sign(..), toString, fromString, getRatings, onRatings, keyboard)
 
 import Dict
+import Json.Decode exposing (Value)
+import ChatId exposing (ChatId)
 
 
 type Sign
@@ -122,15 +124,15 @@ fromString string =
             Nothing
 
 
-port getSignsAndDates : Int -> Cmd msg
+port getSignsAndDates : Value -> Cmd msg
 
 
-port signsAndDates : (( Int, List String, List (Maybe Int) ) -> msg) -> Sub msg
+port signsAndDates : (( Value, List String, List (Maybe Int) ) -> msg) -> Sub msg
 
 
-getRatings : Int -> Cmd msg
-getRatings =
-    getSignsAndDates
+getRatings : ChatId -> Cmd msg
+getRatings chatId =
+    getSignsAndDates (ChatId.encode chatId)
 
 
 {-|
@@ -165,7 +167,7 @@ gradeList signStrings daysAgos =
             |> List.filterMap identity
 
 
-parseSignsAndDates : ( Int, List String, List (Maybe Int) ) -> ( Int, List ( Sign, Float ) )
+parseSignsAndDates : ( Value, List String, List (Maybe Int) ) -> ( ChatId, List ( Sign, Float ) )
 parseSignsAndDates ( chatId, signStrings, daysAgos ) =
     let
         addToDict ( signString, grade ) dict =
@@ -179,7 +181,7 @@ parseSignsAndDates ( chatId, signStrings, daysAgos ) =
                 Nothing ->
                     Nothing
     in
-        ( chatId
+        ( ChatId.decode chatId
         , gradeList signStrings daysAgos
             |> List.foldl addToDict Dict.empty
             |> Dict.toList
@@ -187,6 +189,6 @@ parseSignsAndDates ( chatId, signStrings, daysAgos ) =
         )
 
 
-onRatings : (Int -> List ( Sign, Float ) -> msg) -> Sub msg
+onRatings : (ChatId -> List ( Sign, Float ) -> msg) -> Sub msg
 onRatings toMsg =
     signsAndDates (parseSignsAndDates >> \( chatId, rates ) -> toMsg chatId rates)

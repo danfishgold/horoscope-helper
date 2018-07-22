@@ -1,7 +1,8 @@
 port module Main exposing (..)
 
 import Platform exposing (program)
-import Dict exposing (Dict)
+import EveryDict as Dict exposing (EveryDict)
+import ChatId exposing (ChatId)
 import Sign exposing (Sign)
 import Message exposing (Message(..))
 import Horoscope exposing (Horoscope)
@@ -11,7 +12,7 @@ import Json.Decode
 
 
 type alias Model =
-    { conversations : Dict Int Conversation }
+    { conversations : EveryDict ChatId Conversation }
 
 
 type alias Conversation =
@@ -38,9 +39,9 @@ type State
 
 
 type Msg
-    = NewMessage Int Message
-    | DoneUploading Int (Result String ())
-    | OnRatings Int (List ( Sign, Float ))
+    = NewMessage ChatId Message
+    | DoneUploading ChatId (Result String ())
+    | OnRatings ChatId (List ( Sign, Float ))
 
 
 main : Program Never Model Msg
@@ -88,7 +89,7 @@ update msg model =
             mapConversation (onRatings ratings) chatId model
 
 
-mapConversation : (Int -> Conversation -> ( Conversation, Cmd Msg )) -> Int -> Model -> ( Model, Cmd Msg )
+mapConversation : (ChatId -> Conversation -> ( Conversation, Cmd Msg )) -> ChatId -> Model -> ( Model, Cmd Msg )
 mapConversation fn chatId model =
     let
         convo =
@@ -113,7 +114,7 @@ addPhotoToQueue photoId convo =
     { convo | photoIds = convo.photoIds ++ [ photoId ] }
 
 
-onText : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onText : String -> ChatId -> Conversation -> ( Conversation, Cmd Msg )
 onText text chatId convo =
     case convo.state of
         Initial ->
@@ -181,7 +182,7 @@ onText text chatId convo =
             ( convo, Message.text chatId "שניונת" )
 
 
-onPhoto : String -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onPhoto : String -> ChatId -> Conversation -> ( Conversation, Cmd Msg )
 onPhoto photoId chatId convo =
     case convo.state of
         Initial ->
@@ -200,7 +201,7 @@ onPhoto photoId chatId convo =
             )
 
 
-onUploadFinished : Result String () -> Int -> Conversation -> ( Conversation, Cmd Msg )
+onUploadFinished : Result String () -> ChatId -> Conversation -> ( Conversation, Cmd Msg )
 onUploadFinished result chatId convo =
     case result of
         Ok () ->
@@ -233,7 +234,7 @@ onUploadFinished result chatId convo =
             )
 
 
-onRatings : List ( Sign, Float ) -> Int -> Conversation -> ( Conversation, Cmd msg )
+onRatings : List ( Sign, Float ) -> ChatId -> Conversation -> ( Conversation, Cmd msg )
 onRatings ratings chatId convo =
     let
         topThree =

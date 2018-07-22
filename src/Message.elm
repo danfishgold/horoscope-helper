@@ -1,6 +1,8 @@
 port module Message exposing (Message(..), sub, send, text, batch)
 
 import Time exposing (Time)
+import ChatId exposing (ChatId)
+import Json.Encode exposing (Value)
 
 
 type Message
@@ -9,43 +11,43 @@ type Message
     | Photo String
 
 
-sub : (Int -> Message -> msg) -> Sub msg
+sub : (ChatId -> Message -> msg) -> Sub msg
 sub onMessage =
     Sub.batch
-        [ onText (\( chatId, text ) -> onMessage chatId (Text text))
-        , onPhoto (\( chatId, photoId ) -> onMessage chatId (Photo photoId))
+        [ onText (\( chatId, text ) -> onMessage (ChatId.decode chatId) (Text text))
+        , onPhoto (\( chatId, photoId ) -> onMessage (ChatId.decode chatId) (Photo photoId))
         ]
 
 
-send : Int -> Message -> Cmd msg
+send : ChatId -> Message -> Cmd msg
 send =
     delayed 0
 
 
-text : Int -> String -> Cmd msg
+text : ChatId -> String -> Cmd msg
 text chatId text =
     send chatId (Text text)
 
 
-delayed : Time -> Int -> Message -> Cmd msg
+delayed : Time -> ChatId -> Message -> Cmd msg
 delayed delay chatId content =
     case content of
         Text string ->
-            sendText ( delay, chatId, string )
+            sendText ( delay, ChatId.encode chatId, string )
 
         TextWithKeyboard string keyboard ->
-            sendTextWithKeyboard ( delay, chatId, string, keyboard )
+            sendTextWithKeyboard ( delay, ChatId.encode chatId, string, keyboard )
 
         Photo photoId ->
-            sendPhoto ( delay, chatId, photoId )
+            sendPhoto ( delay, ChatId.encode chatId, photoId )
 
 
-batch : Time -> Int -> List Message -> Cmd msg
+batch : Time -> ChatId -> List Message -> Cmd msg
 batch delay chatId messages =
     Cmd.batch <| batchHelper delay chatId messages 0 []
 
 
-batchHelper : Time -> Int -> List Message -> Time -> List (Cmd msg) -> List (Cmd msg)
+batchHelper : Time -> ChatId -> List Message -> Time -> List (Cmd msg) -> List (Cmd msg)
 batchHelper delay chatId messages currentDelay previousMessages =
     case messages of
         [] ->
@@ -55,16 +57,16 @@ batchHelper delay chatId messages currentDelay previousMessages =
             batchHelper delay chatId rest (currentDelay + delay) (delayed currentDelay chatId current :: previousMessages)
 
 
-port onText : (( Int, String ) -> msg) -> Sub msg
+port onText : (( Value, String ) -> msg) -> Sub msg
 
 
-port onPhoto : (( Int, String ) -> msg) -> Sub msg
+port onPhoto : (( Value, String ) -> msg) -> Sub msg
 
 
-port sendText : ( Float, Int, String ) -> Cmd msg
+port sendText : ( Float, Value, String ) -> Cmd msg
 
 
-port sendTextWithKeyboard : ( Float, Int, String, List (List String) ) -> Cmd msg
+port sendTextWithKeyboard : ( Float, Value, String, List (List String) ) -> Cmd msg
 
 
-port sendPhoto : ( Float, Int, String ) -> Cmd msg
+port sendPhoto : ( Float, Value, String ) -> Cmd msg
